@@ -240,7 +240,7 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
     private final GLU glu = new GLU();
     private FPSAnimator animator;
 
-    private int winW = 1000, winH = 1000;
+    private int winW = 1200, winH = 800;
     private boolean wireframe = false;
     private boolean cullface = true;
     private boolean flatshade = false;
@@ -255,17 +255,21 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
 
     /* === YOUR WORK HERE === */
     /* Define more models you need for constructing your scene */
-    private objModel bunny_model = new objModel("bunny2.obj");
+    private objModel statue_model = new objModel("statue.obj");
     private objModel axe_model = new objModel("axe.obj");
     private objModel male_model = new objModel("male.obj");
-    private objModel female_model = new objModel("female.obj");
     private objModel dragon_model = new objModel("dragon.obj");
+    private objModel bird_model = new objModel("bird.obj");
 
-    private float bunny_rotateT = 0.f;
     private float axe_rotateT = 0.f;
-    private float male_rotateT = 0.f;
-    private float female_rotateT = 0.f;
+    private float axe_vertical = 0;
     private float dragon_rotateT = 0.f;
+    private float statue_rotateT = 0.f;
+    private float bird_rotateT = 0.f;
+    private float bird_vertical = 0;
+
+    private boolean axe_down = true;
+    private boolean bird_down = true;
     /* Here you should give a conservative estimate of the scene's bounding box
      * so that the initViewParameters function can calculate proper
      * transformation parameters to display the initial scene.
@@ -293,7 +297,6 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
         gl.glRotatef(360.f - roth, 0, 1.0f, 0);
         gl.glRotatef(rotv, 1.0f, 0, 0);
         gl.glTranslatef(-centerx, -centery, -centerz);
-        gl.glTranslatef(0,0,-3);
 
         /* === YOUR WORK HERE === */
         /* Below is an example of a rotating bunny
@@ -301,33 +304,87 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
          */
         //Male
         gl.glPushMatrix();
-        gl.glRotatef(male_rotateT, 0, 1, 0);
-        male_model.Draw();
-        gl.glPushMatrix();
-        gl.glTranslatef(0.25f, 0, 0);
-        gl.glRotatef(-90.f, 0, 1, 0);
-        female_model.Draw();
-        gl.glPopMatrix();
+            //Matrix for the statue in the middle
+            gl.glPushMatrix();
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, new float[]{.1f, 0.3f, .2f, 1f}, 0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.3f, 0.4f, 0.4f, 1f}, 0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{.3f, 0.3f, .3f, 1f}, 0);
 
-        gl.glPushMatrix();
-        gl.glTranslatef(-.25f, -0.5f, 0);
-        gl.glScalef(0.25f, 0.25f, 0.25f);
-        bunny_model.Draw();
-        gl.glPopMatrix();
+                gl.glTranslatef(0, -0.6f, 0);
+                gl.glScalef(0.3f,0.3f,0.3f);
+                gl.glRotatef(statue_rotateT, 0, -1, 0);
+                statue_model.Draw();
+            gl.glPopMatrix();
 
-        gl.glPushMatrix();
-        gl.glTranslatef(2, 0, 0);
-        gl.glScalef(2, 2, 2);
-        gl.glTranslatef(-2, -.25f, 0);
-//            gl.glRotatef(dragon_rotateT, 0, 1, 0);
-        dragon_model.Draw();
-        gl.glPopMatrix();
+            //Matrix for the Axe in the middle
+            gl.glPushMatrix();
+                gl.glTranslatef(0,(float) (0.1*axe_vertical),0);
+                gl.glScalef(0.2f,0.2f,0.2f);
+                gl.glRotatef(axe_rotateT, 0, 1, 0);
+                axe_model.Draw();
+            gl.glPopMatrix();
+
+            //matrix for dragon
+            gl.glPushMatrix();
+                gl.glTranslatef(-centerx, -centery, -centerz);
+                gl.glScalef(1f, 1f, 1f);
+                gl.glRotatef(dragon_rotateT, 0, 1, 0);
+                gl.glTranslatef(-1.f, -0.5f, 0);
+                dragon_model.Draw();
+                    //Matrix for the man
+                    gl.glPushMatrix();
+                        gl.glTranslatef(2.f, 0.2f, 0);
+                        gl.glScalef(0.5f, 0.5f, 0.5f);
+                        gl.glRotatef(-90.f, 0, 1, 0);
+                        male_model.Draw();
+                        //Matrix for the bird
+                            gl.glPushMatrix();
+                                gl.glTranslatef(0.3f,(float) (0.1* bird_vertical ),0);
+                                gl.glScalef(0.2f,0.2f,0.2f);
+                                gl.glRotatef(bird_rotateT, 0, 1, 0);
+                                bird_model.Draw();
+                            gl.glPopMatrix();
+                    gl.glPopMatrix();
+            gl.glPopMatrix();
         gl.glPopMatrix();
 
         /* increment bunny_rotateT */
         if (animator.isAnimating()) {
             dragon_rotateT += 1.0f * animation_speed;
-            male_rotateT += 1.0f * animation_speed;
+            statue_rotateT += 1.0f * animation_speed;
+            axe_rotateT += 1.0f * animation_speed;
+            bird_rotateT += 1.0f * animation_speed;
+
+            if (axe_down) {
+                if (axe_vertical < -1) {
+                    axe_vertical += 0.1;
+                    axe_down = false;
+                } else {
+                    axe_vertical -= 0.1;
+                }
+            } else {
+                if (axe_vertical > 1) {
+                    axe_vertical -= 0.1;
+                    axe_down = true;
+                } else {
+                    axe_vertical += 0.1;
+                }
+            }
+            if (bird_down) {
+                if (bird_vertical < 1) {
+                    bird_vertical += 0.05;
+                    bird_down = false;
+                } else {
+                    bird_vertical -= 0.05;
+                }
+            } else {
+                if (bird_vertical > 2) {
+                    bird_vertical -= 0.05;
+                    bird_down = true;
+                } else {
+                    bird_vertical += 0.05;
+                }
+            }
         }
     }
 
