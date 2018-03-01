@@ -11,6 +11,7 @@ import java.nio.IntBuffer;
 
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.glu.GLU;
+import com.jogamp.opengl.util.gl2.GLUT;
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.awt.GLCanvas;
@@ -238,6 +239,7 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
     private final GLCanvas canvas;
     private GL2 gl;
     private final GLU glu = new GLU();
+    private final GLUT glut = new GLUT();
     private FPSAnimator animator;
 
     private int winW = 1200, winH = 800;
@@ -251,25 +253,35 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
     private float znear, zfar;
     private int mouseX, mouseY, mouseButton;
     private float motionSpeed, rotateSpeed;
-    private float animation_speed = 1.0f;
+    private float animation_speed = .3f;
 
     /* === YOUR WORK HERE === */
     /* Define more models you need for constructing your scene */
     private objModel statue_model = new objModel("statue.obj");
     private objModel axe_model = new objModel("axe.obj");
     private objModel male_model = new objModel("male.obj");
+    private objModel female_model = new objModel("female.obj");
     private objModel dragon_model = new objModel("dragon.obj");
     private objModel bird_model = new objModel("bird.obj");
+    private objModel bunny_model = new objModel("bunny.obj");
+    private objModel tree_conical_model = new objModel("tree_conical.obj");
 
     private float axe_rotateT = 0.f;
-    private float axe_vertical = 0;
+    private float sun_rotateT = 0.f;
     private float dragon_rotateT = 0.f;
     private float statue_rotateT = 0.f;
     private float bird_rotateT = 0.f;
-    private float bird_vertical = 0;
+    private float bunny_Xlimit = 0;
+    private float sun_Xlimit = 0;
+    private float axe_Ylimit = 0;
+    private float bird_Ylimit = 0;
+    private float female_Zlimit = 0;
 
     private boolean axe_down = true;
     private boolean bird_down = true;
+    private boolean female_far = true;
+    private boolean bunny_left = true;
+    private boolean sun_left = true;
     /* Here you should give a conservative estimate of the scene's bounding box
      * so that the initViewParameters function can calculate proper
      * transformation parameters to display the initial scene.
@@ -303,13 +315,24 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
          * It rotates the bunny with bunny_rotateT degrees around the bunny's gravity center
          */
         //Male
+
         gl.glPushMatrix();
+            //Matrix for the sun on top
+            gl.glPushMatrix();
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{30.f},0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{1f, 0.7f, 0.0f, 1f}, 0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{0.7f, 0.2f, 0.0f, 1f}, 0);
+                gl.glTranslatef((float) (0.1* sun_Xlimit ),1.3f, 0);
+                gl.glScalef(0.3f,0.3f,0.3f);
+                gl.glRotatef(sun_rotateT, 0, 1, 0);
+                glut.glutSolidSphere(0.3f, 50, 50);
+            gl.glPopMatrix();
+
             //Matrix for the statue in the middle
             gl.glPushMatrix();
-                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT, new float[]{.1f, 0.3f, .2f, 1f}, 0);
-                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.3f, 0.4f, 0.4f, 1f}, 0);
-                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{.3f, 0.3f, .3f, 1f}, 0);
-
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{128.f},0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.2f, 0.2f, 0.2f, 1f}, 0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{0.5f, 0.5f, 0.5f, 1f}, 0);
                 gl.glTranslatef(0, -0.6f, 0);
                 gl.glScalef(0.3f,0.3f,0.3f);
                 gl.glRotatef(statue_rotateT, 0, -1, 0);
@@ -318,33 +341,76 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
 
             //Matrix for the Axe in the middle
             gl.glPushMatrix();
-                gl.glTranslatef(0,(float) (0.1*axe_vertical),0);
-                gl.glScalef(0.2f,0.2f,0.2f);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{128.f},0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{1f, 1f, 0f, 1f}, 0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{1f, 1f, 1f, 1f}, 0);
+                gl.glTranslatef(0,(float) (0.1*axe_Ylimit),0);
+                gl.glScalef(0.3f,0.3f,0.3f);
                 gl.glRotatef(axe_rotateT, 0, 1, 0);
                 axe_model.Draw();
             gl.glPopMatrix();
 
             //matrix for dragon
             gl.glPushMatrix();
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{90.f},0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.5f, 0f, 0f, 1f}, 0);
+                gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{0.5f, 0.5f, 0.5f, 1f}, 0);
                 gl.glTranslatef(-centerx, -centery, -centerz);
                 gl.glScalef(1f, 1f, 1f);
                 gl.glRotatef(dragon_rotateT, 0, 1, 0);
                 gl.glTranslatef(-1.f, -0.5f, 0);
                 dragon_model.Draw();
-                    //Matrix for the man
+                //Matrix for the Forest
+                for(double i=-5;i<5;i+=0.5) {
                     gl.glPushMatrix();
-                        gl.glTranslatef(2.f, 0.2f, 0);
-                        gl.glScalef(0.5f, 0.5f, 0.5f);
-                        gl.glRotatef(-90.f, 0, 1, 0);
-                        male_model.Draw();
-                        //Matrix for the bird
-                            gl.glPushMatrix();
-                                gl.glTranslatef(0.3f,(float) (0.1* bird_vertical ),0);
-                                gl.glScalef(0.2f,0.2f,0.2f);
-                                gl.glRotatef(bird_rotateT, 0, 1, 0);
-                                bird_model.Draw();
-                            gl.glPopMatrix();
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{128.f}, 0);
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{1f, 0.5f, 0f, 1f}, 0);
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{0.5f, 1f, 0f, 1f}, 0);
+                        gl.glTranslatef((float) i+3, 0.2f, (float) i-1);
+                        tree_conical_model.Draw();
                     gl.glPopMatrix();
+                }
+                //Matrix for the man
+                gl.glPushMatrix();
+                    gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{100.f},0);
+                    gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.5f, 0.7f, 0.7f, 1f}, 0);
+                    gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{1.f,0.2f,0.1f,0}, 0);
+                    gl.glTranslatef(2.f, 0.2f, 0);
+                    gl.glScalef(0.5f, 0.5f, 0.5f);
+                    gl.glRotatef(-90, 0, 1, 0);
+                    male_model.Draw();
+                    //Matrix for female
+                    gl.glPushMatrix();
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{128.f},0);
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.5f, 0.4f, 0.4f, 1f}, 0);
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{1.f,0.2f,0.1f,0}, 0);
+                        gl.glTranslatef(-0.5f,-0.05f, (float) (0.1* female_Zlimit ));
+                        if(female_far)
+                            gl.glRotatef(180.f, 0, 1, 0);
+                        female_model.Draw();
+                        //Matrix for bunny, this is also the 4th level of hierarchy
+                        gl.glPushMatrix();
+                            gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{128.f},0);
+                            gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.5f, 0.4f, 0.4f, 1f}, 0);
+                            gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{1.f,0.2f,0.1f,0}, 0);
+                            gl.glTranslatef((float) (0.1* bunny_Xlimit ),-0.5f, 0);
+                            gl.glScalef(0.2f,0.2f,0.2f);
+                            if(bunny_left)
+                                gl.glRotatef(-180.f, 0, 1, 0);
+                            bunny_model.Draw();
+                        gl.glPopMatrix();
+                    gl.glPopMatrix();
+                    //Matrix for the bird
+                    gl.glPushMatrix();
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, new float[]{128.f},0);
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_DIFFUSE, new float[]{0.0f, 0.7f, 0.0f, 1f}, 0);
+                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, new float[]{0.8f, 0.3f, 0.2f, 1f}, 0);
+                        gl.glTranslatef(0.3f,(float) (0.1* bird_Ylimit ),0);
+                        gl.glScalef(0.2f,0.2f,0.2f);
+                        gl.glRotatef(bird_rotateT, 0, 1, 0);
+                        bird_model.Draw();
+                    gl.glPopMatrix();
+                gl.glPopMatrix();
             gl.glPopMatrix();
         gl.glPopMatrix();
 
@@ -354,35 +420,79 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
             statue_rotateT += 1.0f * animation_speed;
             axe_rotateT += 1.0f * animation_speed;
             bird_rotateT += 1.0f * animation_speed;
-
             if (axe_down) {
-                if (axe_vertical < -1) {
-                    axe_vertical += 0.1;
+                if (axe_Ylimit < -1) {
+                    axe_Ylimit += 0.1;
                     axe_down = false;
                 } else {
-                    axe_vertical -= 0.1;
+                    axe_Ylimit  -= 0.1;
                 }
             } else {
-                if (axe_vertical > 1) {
-                    axe_vertical -= 0.1;
+                if (axe_Ylimit > 1) {
+                    axe_Ylimit  -= 0.1;
                     axe_down = true;
                 } else {
-                    axe_vertical += 0.1;
+                    axe_Ylimit += 0.1;
                 }
             }
             if (bird_down) {
-                if (bird_vertical < 1) {
-                    bird_vertical += 0.05;
+                if (bird_Ylimit < 1) {
+                    bird_Ylimit += 0.05;
                     bird_down = false;
                 } else {
-                    bird_vertical -= 0.05;
+                    bird_Ylimit -= 0.05;
                 }
             } else {
-                if (bird_vertical > 2) {
-                    bird_vertical -= 0.05;
+                if (bird_Ylimit > 2) {
+                    bird_Ylimit  -= 0.05;
                     bird_down = true;
                 } else {
-                    bird_vertical += 0.05;
+                    bird_Ylimit += 0.05;
+                }
+            }
+            if (female_far) {
+                if (female_Zlimit < -20) {
+                    female_Zlimit += 0.1;
+                    female_far = false;
+                } else {
+                    female_Zlimit -= 0.1;
+                }
+            } else {
+                if (female_Zlimit > 0) {
+                    female_Zlimit -= 0.1;
+                    female_far = true;
+                } else {
+                    female_Zlimit += 0.1;
+                }
+            }
+            if (bunny_left) {
+                if (bunny_Xlimit < -5) {
+                    bunny_Xlimit += 0.1;
+                    bunny_left = false;
+                } else {
+                    bunny_Xlimit -= 0.1;
+                }
+            } else {
+                if (bunny_Xlimit > 5) {
+                    bunny_Xlimit -= 0.1;
+                    bunny_left = true;
+                } else {
+                    bunny_Xlimit += 0.1;
+                }
+            }
+            if (sun_left) {
+                if (sun_Xlimit < -10) {
+                    sun_Xlimit += 0.01;
+                    sun_left = false;
+                } else {
+                    sun_Xlimit -= 0.01;
+                }
+            } else {
+                if (sun_Xlimit > 10) {
+                    sun_Xlimit -= 0.01;
+                    sun_left = true;
+                } else {
+                    sun_Xlimit += 0.01;
                 }
             }
         }
@@ -398,7 +508,7 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
         canvas.addKeyListener(this);
         canvas.addMouseListener(this);
         canvas.addMouseMotionListener(this);
-        animator = new FPSAnimator(canvas, 30);	// create a 30 fps animator
+        animator = new FPSAnimator(canvas, 60);	// create a 30 fps animator
         getContentPane().add(canvas);
         setSize(winW, winH);
         setLocationRelativeTo(null);
@@ -448,6 +558,7 @@ class Hierarchical extends JFrame implements GLEventListener, KeyListener, Mouse
         gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, lmodel_ambient, 0);
         gl.glLightModeli(GL2.GL_LIGHT_MODEL_TWO_SIDE, 1);
 
+        gl.glDisable(GL2.GL_COLOR_MATERIAL);
         gl.glEnable(GL2.GL_NORMALIZE);
         gl.glEnable(GL2.GL_LIGHTING);
         gl.glEnable(GL2.GL_LIGHT0);
